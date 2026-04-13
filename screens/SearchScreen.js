@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,8 +17,30 @@ export default function SearchScreen({ navigation }) {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    fetchPopular();
+  }, []);
+
+  async function fetchPopular() {
+    setLoading(true);
+    try {
+      const res = await fetch(`${TMDB_BASE_URL}/movie/popular?language=en-US&page=1`, {
+        headers: { Authorization: `Bearer ${TMDB_ACCESS_TOKEN}` },
+      });
+      const data = await res.json();
+      setResults(data.results ?? []);
+    } catch (err) {
+      console.error('Failed to load popular movies:', err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function handleSearch() {
-    if (!query.trim()) return;
+    if (!query.trim()) {
+      fetchPopular();
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch(`${TMDB_BASE_URL}/search/movie?query=${encodeURIComponent(query)}&language=en-US&page=1`, {
@@ -50,12 +72,9 @@ export default function SearchScreen({ navigation }) {
 
       {loading && <ActivityIndicator color="#e50914" style={{ marginTop: 20 }} />}
 
-      {!loading && results.length === 0 && (
-        <View style={styles.emptyState}>
-          <FontAwesome name="film" size={48} color="#333" />
-          <Text style={styles.emptyText}>Search for a movie</Text>
-        </View>
-      )}
+      <Text style={styles.sectionHeader}>
+        {query.trim() ? 'Results' : 'Popular Movies'}
+      </Text>
 
       <FlatList
         data={results}
@@ -100,8 +119,7 @@ const styles = StyleSheet.create({
   },
   searchIcon: { marginRight: 8 },
   input: { flex: 1, color: '#fff', fontSize: 16, paddingVertical: 12 },
-  emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyText: { color: '#444', fontSize: 16, marginTop: 12 },
+  sectionHeader: { color: '#888', fontSize: 13, fontWeight: '600', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 },
   movieCard: {
     flexDirection: 'row',
     alignItems: 'center',
