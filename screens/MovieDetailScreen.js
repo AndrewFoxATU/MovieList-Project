@@ -1,6 +1,6 @@
 // MovieDetailScreen — shows full details for a selected movie.
 // Also fetches streaming availability for Ireland via the Streaming Availability API.
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,8 +11,10 @@ import {
   StyleSheet,
   Linking,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { TMDB_BASE_URL, TMDB_ACCESS_TOKEN, POSTER_BASE_URL, STREAMING_RAPIDAPI_KEY } from '../config';
+import { addToWatchlist, removeFromWatchlist, isInWatchlist } from '../database/watchlist';
 
 // Brand colours and display names for each streaming service
 const SERVICE_COLORS = {
@@ -46,10 +48,18 @@ export default function MovieDetailScreen({ route }) {
   const [loading, setLoading] = useState(true);
   const [streaming, setStreaming] = useState([]);
   const [streamingLoading, setStreamingLoading] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     fetchDetails();
   }, []);
+
+  // Re-check watchlist status every time this screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      isInWatchlist(movie.id).then(setSaved);
+    }, [movie.id])
+  );
 
   // Fetch full movie details from TMDB (includes runtime, imdb_id, etc.)
   async function fetchDetails() {
@@ -91,8 +101,21 @@ export default function MovieDetailScreen({ route }) {
     }
   }
 
-  function handleAddToWatchlist() {
-    // TODO: insert movie into SQLite watchlist
+  async function handleToggleWatchlist() {
+    const data = details ?? movie;
+    if (saved) {
+      await removeFromWatchlist(data.id);
+      setSaved(false);
+    } else {
+      await addToWatchlist({
+        tmdb_id: data.id,
+        title: data.title,
+        year: data.release_date?.slice(0, 4),
+        rating: data.vote_average,
+        poster_url: data.poster_path ? `${POSTER_BASE_URL}${data.poster_path}` : null,
+      });
+      setSaved(true);
+    }
   }
 
   if (loading) {
@@ -105,7 +128,7 @@ export default function MovieDetailScreen({ route }) {
 
   // Use detailed data if loaded, fall back to the basic movie object from search
   const data = details ?? movie;
-  const posterUri = data.poster_path ? `${POSTER_BASE_URL}${data.poster_path}` : null;
+  const posterUri = data.poster_path ? `${POSTER_BASE_URL}${data.poster_path}` : data.poster_url ?? null;
 
   return (
     <ScrollView style={styles.container}>
@@ -161,9 +184,12 @@ export default function MovieDetailScreen({ route }) {
           )}
         </View>
 
-        <TouchableOpacity style={styles.button} onPress={handleAddToWatchlist}>
-          <FontAwesome name="plus" size={16} color="#fff" />
-          <Text style={styles.buttonText}>  Add to Watchlist</Text>
+        <TouchableOpacity
+          style={[styles.button, saved && styles.buttonSaved]}
+          onPress={handleToggleWatchlist}
+        >
+          <FontAwesome name={saved ? 'minus' : 'plus'} size={16} color="#fff" />
+          <Text style={styles.buttonText}>  {saved ? 'Remove from Watchlist' : 'Add to Watchlist'}</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -197,5 +223,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  buttonSaved: { backgroundColor: '#333' },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });

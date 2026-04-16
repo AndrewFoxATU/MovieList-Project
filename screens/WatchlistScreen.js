@@ -1,16 +1,25 @@
-// WatchlistScreen — displays the user's saved movies.
-// SQLite fetch and delete will be wired up here when the DB is ready.
-import { useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+// WatchlistScreen — shows movies saved to the SQLite watchlist.
+// Reloads every time the tab is focused so it stays in sync with MovieDetailScreen.
+import { useState, useCallback } from 'react';
+import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { getWatchlist, removeFromWatchlist } from '../database/watchlist';
+import MovieCard from '../components/MovieCard';
 
-export default function WatchlistScreen() {
-  // TODO: replace with real SQLite fetch
+export default function WatchlistScreen({ navigation }) {
   const [watchlist, setWatchlist] = useState([]);
 
-  function handleRemove(id) {
-    // TODO: delete from SQLite, then update state
-    setWatchlist(prev => prev.filter(m => m.id !== id));
+  // Reload from SQLite every time this tab comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      getWatchlist().then(setWatchlist);
+    }, [])
+  );
+
+  async function handleRemove(tmdbId) {
+    await removeFromWatchlist(tmdbId);
+    setWatchlist(prev => prev.filter(m => m.tmdb_id !== tmdbId));
   }
 
   if (watchlist.length === 0) {
@@ -26,22 +35,16 @@ export default function WatchlistScreen() {
     <FlatList
       style={styles.container}
       data={watchlist}
-      keyExtractor={item => String(item.id)}
+      keyExtractor={item => String(item.tmdb_id)}
       renderItem={({ item }) => (
-        <View style={styles.movieCard}>
-          <View style={styles.poster} />
-          <View style={styles.movieInfo}>
-            <Text style={styles.movieTitle}>{item.title}</Text>
-            <Text style={styles.movieMeta}>{item.year}</Text>
-            <View style={styles.ratingRow}>
-              <FontAwesome name="star" size={12} color="#f5c518" />
-              <Text style={styles.rating}> {item.rating}</Text>
-            </View>
-          </View>
-          <TouchableOpacity onPress={() => handleRemove(item.id)}>
-            <FontAwesome name="trash" size={20} color="#e50914" />
-          </TouchableOpacity>
-        </View>
+        <MovieCard
+          title={item.title}
+          year={item.year}
+          rating={item.rating}
+          posterUri={item.poster_url}
+          onPress={() => navigation.navigate('MovieDetail', { movie: { id: item.tmdb_id, title: item.title, poster_url: item.poster_url, release_date: item.year, vote_average: item.rating } })}
+          onRemove={() => handleRemove(item.tmdb_id)}
+        />
       )}
     />
   );
@@ -51,18 +54,4 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#121212', padding: 16 },
   emptyContainer: { flex: 1, backgroundColor: '#121212', justifyContent: 'center', alignItems: 'center' },
   emptyText: { color: '#444', fontSize: 16, marginTop: 12 },
-  movieCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1e1e1e',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 10,
-  },
-  poster: { width: 50, height: 75, borderRadius: 4, backgroundColor: '#333', marginRight: 12 },
-  movieInfo: { flex: 1 },
-  movieTitle: { color: '#fff', fontSize: 16, fontWeight: '600', marginBottom: 4 },
-  movieMeta: { color: '#888', fontSize: 13, marginBottom: 4 },
-  ratingRow: { flexDirection: 'row', alignItems: 'center' },
-  rating: { color: '#f5c518', fontSize: 13 },
 });

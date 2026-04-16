@@ -17,14 +17,31 @@ import AIRecommendationsScreen from '../screens/AIRecommendationsScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const SearchStack = createNativeStackNavigator();
+const WatchlistStack = createNativeStackNavigator();
 
 // Search and MovieDetail share a stack so the detail screen slides in over search
+const darkHeader = {
+  headerStyle: { backgroundColor: '#121212' },
+  headerTintColor: '#fff',
+  headerShadowVisible: false,
+};
+
 function SearchNavigator() {
   return (
-    <SearchStack.Navigator>
+    <SearchStack.Navigator screenOptions={darkHeader}>
       <SearchStack.Screen name="SearchHome" component={SearchScreen} options={{ title: 'Search' }} />
       <SearchStack.Screen name="MovieDetail" component={MovieDetailScreen} options={{ title: 'Movie' }} />
     </SearchStack.Navigator>
+  );
+}
+
+// Watchlist also gets its own stack so tapping a movie slides to the same detail screen
+function WatchlistNavigator() {
+  return (
+    <WatchlistStack.Navigator screenOptions={darkHeader}>
+      <WatchlistStack.Screen name="WatchlistHome" component={WatchlistScreen} options={{ title: 'Watchlist' }} />
+      <WatchlistStack.Screen name="MovieDetail" component={MovieDetailScreen} options={{ title: 'Movie' }} />
+    </WatchlistStack.Navigator>
   );
 }
 
@@ -50,8 +67,9 @@ function MainTabs() {
       />
       <Tab.Screen
         name="Watchlist"
-        component={WatchlistScreen}
+        component={WatchlistNavigator}
         options={{
+          headerShown: false,
           tabBarIcon: ({ color, size }) => <FontAwesome name="film" size={size} color={color} />,
         }}
       />

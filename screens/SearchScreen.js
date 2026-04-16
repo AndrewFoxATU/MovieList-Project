@@ -6,13 +6,12 @@ import {
   Text,
   TextInput,
   FlatList,
-  TouchableOpacity,
-  Image,
   ActivityIndicator,
   StyleSheet,
 } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { TMDB_BASE_URL, TMDB_ACCESS_TOKEN, POSTER_BASE_URL } from '../config';
+import MovieCard from '../components/MovieCard';
 
 export default function SearchScreen({ navigation }) {
   const [query, setQuery] = useState('');
@@ -87,25 +86,13 @@ export default function SearchScreen({ navigation }) {
         data={results}
         keyExtractor={item => String(item.id)}
         renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.movieCard}
+          <MovieCard
+            title={item.title}
+            year={item.release_date?.slice(0, 4)}
+            rating={item.vote_average}
+            posterUri={item.poster_path ? `${POSTER_BASE_URL}${item.poster_path}` : null}
             onPress={() => navigation.navigate('MovieDetail', { movie: item })}
-          >
-            {item.poster_path ? (
-              <Image source={{ uri: `${POSTER_BASE_URL}${item.poster_path}` }} style={styles.poster} />
-            ) : (
-              <View style={styles.poster} />
-            )}
-            <View style={styles.movieInfo}>
-              <Text style={styles.movieTitle} numberOfLines={2}>{item.title}</Text>
-              <Text style={styles.movieMeta}>{item.release_date?.slice(0, 4)}</Text>
-              <View style={styles.ratingRow}>
-                <FontAwesome name="star" size={12} color="#f5c518" />
-                <Text style={styles.rating}> {item.vote_average?.toFixed(1)}</Text>
-              </View>
-            </View>
-            <FontAwesome name="chevron-right" size={14} color="#555" />
-          </TouchableOpacity>
+          />
         )}
       />
     </View>
@@ -127,18 +114,4 @@ const styles = StyleSheet.create({
   searchIcon: { marginRight: 8 },
   input: { flex: 1, color: '#fff', fontSize: 16, paddingVertical: 12 },
   sectionHeader: { color: '#888', fontSize: 13, fontWeight: '600', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 },
-  movieCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1e1e1e',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 10,
-  },
-  poster: { width: 50, height: 75, borderRadius: 4, backgroundColor: '#333', marginRight: 12 },
-  movieInfo: { flex: 1 },
-  movieTitle: { color: '#fff', fontSize: 16, fontWeight: '600', marginBottom: 4 },
-  movieMeta: { color: '#888', fontSize: 13, marginBottom: 4 },
-  ratingRow: { flexDirection: 'row', alignItems: 'center' },
-  rating: { color: '#f5c518', fontSize: 13 },
 });

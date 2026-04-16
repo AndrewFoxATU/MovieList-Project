@@ -8,45 +8,47 @@ import {
   StyleSheet,
 } from 'react-native';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
-import { DEEPSEEK_API_KEY } from '../config';
+import { STREAMING_RAPIDAPI_KEY } from '../config';
+import { getWatchlist } from '../database/watchlist';
 
 export default function AIRecommendationsScreen() {
-  // TODO: replace with real SQLite watchlist fetch
-  const [watchlist] = useState([
-    { title: 'Inception', year: '2010' },
-    { title: 'Oppenheimer', year: '2023' },
-  ]);
+  const [watchlist, setWatchlist] = useState([]);
 
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fetch recommendations automatically when the watchlist loads
+  // Load watchlist from SQLite, then fetch recommendations
   useEffect(() => {
-    if (watchlist.length > 0) fetchRecommendations();
+    getWatchlist().then(movies => {
+      setWatchlist(movies);
+      if (movies.length > 0) fetchRecommendations(movies);
+    });
   }, []);
 
-  async function fetchRecommendations() {
+  async function fetchRecommendations(movies = watchlist) {
     setLoading(true);
     setError(null);
     setRecommendations([]);
 
     // Build the prompt from the user's watchlist
-    const movieList = watchlist.map(m => `- ${m.title} (${m.year})`).join('\n');
-    const prompt = `You are a movie recommendation expert. The user has watched:\n${movieList}\n\nRecommend exactly 5 movies they haven't seen. Reply ONLY with a JSON array:\n[{"title":"","year":"","genre":"","reason":""}]`;
+    const movieList = movies.map(m => `- ${m.title} (${m.year})`).join('\n');
+    const message = `You are a movie recommendation expert. I have watched:\n${movieList}\n\nRecommend exactly 5 movies I haven't seen. Reply ONLY with a JSON array, no extra text:\n[{"title":"","year":"","genre":"","reason":""}]`;
 
     try {
-      const response = await fetch('https://api.deepseek.com/chat/completions', {
+      const response = await fetch('https://grok-2-by-xai.p.rapidapi.com/', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+          'x-rapidapi-key': STREAMING_RAPIDAPI_KEY,
+          'x-rapidapi-host': 'grok-2-by-xai.p.rapidapi.com',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'deepseek-chat',
+          model: 'Grok-2',
+          temperature: 1,
+          max_tokens: 2048,
           messages: [
-            { role: 'system', content: prompt },
-            { role: 'user', content: 'Give me my recommendations.' },
+            { role: 'user', content: message },
           ],
         }),
       });
@@ -55,7 +57,6 @@ export default function AIRecommendationsScreen() {
 
       if (!response.ok) throw new Error(data.error?.message ?? 'Request failed');
 
-      // DeepSeek returns the text inside choices[0].message.content
       const text = data.choices?.[0]?.message?.content ?? '[]';
       const parsed = JSON.parse(text);
       setRecommendations(parsed);
