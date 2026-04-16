@@ -1,27 +1,34 @@
+// AppNavigator sets up the full navigation structure:
+// - Auth stack: Login → Signup
+// - Main tabs: Search (with movie detail nested inside) | Watchlist | AI Picks
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 
 import LoginScreen from '../screens/LoginScreen';
 import SignupScreen from '../screens/SignupScreen';
 import SearchScreen from '../screens/SearchScreen';
 import MovieDetailScreen from '../screens/MovieDetailScreen';
 import WatchlistScreen from '../screens/WatchlistScreen';
+import AIRecommendationsScreen from '../screens/AIRecommendationsScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
-const SearchStackNav = createNativeStackNavigator();
+const SearchStack = createNativeStackNavigator();
 
-function SearchStack() {
+// Search and MovieDetail share a stack so the detail screen slides in over search
+function SearchNavigator() {
   return (
-    <SearchStackNav.Navigator>
-      <SearchStackNav.Screen name="SearchHome" component={SearchScreen} options={{ title: 'Search' }} />
-      <SearchStackNav.Screen name="MovieDetail" component={MovieDetailScreen} options={{ title: 'Movie' }} />
-    </SearchStackNav.Navigator>
+    <SearchStack.Navigator>
+      <SearchStack.Screen name="SearchHome" component={SearchScreen} options={{ title: 'Search' }} />
+      <SearchStack.Screen name="MovieDetail" component={MovieDetailScreen} options={{ title: 'Movie' }} />
+    </SearchStack.Navigator>
   );
 }
 
+// Bottom tab bar shown after login
 function MainTabs() {
   return (
     <Tab.Navigator
@@ -35,7 +42,7 @@ function MainTabs() {
     >
       <Tab.Screen
         name="Search"
-        component={SearchStack}
+        component={SearchNavigator}
         options={{
           headerShown: false,
           tabBarIcon: ({ color, size }) => <FontAwesome name="search" size={size} color={color} />,
@@ -46,6 +53,14 @@ function MainTabs() {
         component={WatchlistScreen}
         options={{
           tabBarIcon: ({ color, size }) => <FontAwesome name="film" size={size} color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="AI"
+        component={AIRecommendationsScreen}
+        options={{
+          title: 'AI Picks',
+          tabBarIcon: ({ color, size }) => <FontAwesome5 name="brain" size={size} color={color} />,
         }}
       />
     </Tab.Navigator>

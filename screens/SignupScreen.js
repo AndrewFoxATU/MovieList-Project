@@ -1,9 +1,16 @@
+// SignupScreen — collects a username and password to create an account.
+// SQLite insert logic will be added here when the DB is wired up.
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 
 export default function SignupScreen({ navigation }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+
+  function handleSignup() {
+    // TODO: insert new user into SQLite before navigating
+    navigation.replace('Main');
+  }
 
   return (
     <View style={styles.container}>
@@ -26,7 +33,7 @@ export default function SignupScreen({ navigation }) {
         onChangeText={setPassword}
       />
 
-      <TouchableOpacity style={styles.button} onPress={() => navigation.replace('Main')}>
+      <TouchableOpacity style={styles.button} onPress={handleSignup}>
         <Text style={styles.buttonText}>Sign Up</Text>
       </TouchableOpacity>
 
@@ -40,19 +47,8 @@ export default function SignupScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#121212',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  title: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#fff',
-    textAlign: 'center',
-    marginBottom: 40,
-  },
+  container: { flex: 1, backgroundColor: '#121212', justifyContent: 'center', padding: 24 },
+  title: { fontSize: 36, fontWeight: 'bold', color: '#fff', textAlign: 'center', marginBottom: 40 },
   input: {
     backgroundColor: '#1e1e1e',
     color: '#fff',
@@ -71,18 +67,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     marginTop: 4,
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  link: {
-    color: '#888',
-    textAlign: 'center',
-    fontSize: 14,
-  },
-  linkBold: {
-    color: '#fff',
-    fontWeight: '600',
-  },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  link: { color: '#888', textAlign: 'center', fontSize: 14 },
+  linkBold: { color: '#fff', fontWeight: '600' },
 });

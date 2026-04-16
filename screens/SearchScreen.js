@@ -1,3 +1,5 @@
+// SearchScreen — shows popular movies on load, or search results when the user types.
+// Tapping a movie navigates to MovieDetailScreen.
 import { useState, useEffect } from 'react';
 import {
   View,
@@ -17,6 +19,7 @@ export default function SearchScreen({ navigation }) {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // Load popular movies when the screen first opens
   useEffect(() => {
     fetchPopular();
   }, []);
@@ -37,15 +40,17 @@ export default function SearchScreen({ navigation }) {
   }
 
   async function handleSearch() {
+    // If the search box is empty, go back to showing popular movies
     if (!query.trim()) {
       fetchPopular();
       return;
     }
     setLoading(true);
     try {
-      const res = await fetch(`${TMDB_BASE_URL}/search/movie?query=${encodeURIComponent(query)}&language=en-US&page=1`, {
-        headers: { Authorization: `Bearer ${TMDB_ACCESS_TOKEN}` },
-      });
+      const res = await fetch(
+        `${TMDB_BASE_URL}/search/movie?query=${encodeURIComponent(query)}&language=en-US&page=1`,
+        { headers: { Authorization: `Bearer ${TMDB_ACCESS_TOKEN}` } }
+      );
       const data = await res.json();
       setResults(data.results ?? []);
     } catch (err) {
@@ -57,6 +62,7 @@ export default function SearchScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
+      {/* Search bar */}
       <View style={styles.searchRow}>
         <FontAwesome name="search" size={18} color="#888" style={styles.searchIcon} />
         <TextInput
@@ -76,6 +82,7 @@ export default function SearchScreen({ navigation }) {
         {query.trim() ? 'Results' : 'Popular Movies'}
       </Text>
 
+      {/* Movie list */}
       <FlatList
         data={results}
         keyExtractor={item => String(item.id)}

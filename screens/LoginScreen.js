@@ -1,9 +1,16 @@
+// LoginScreen — lets the user log in or skip straight to the app for testing.
+// Auth logic (SQLite user lookup) will be added here when the DB is wired up.
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 
 export default function LoginScreen({ navigation }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+
+  function handleLogin() {
+    // TODO: check credentials against SQLite before navigating
+    navigation.replace('Main');
+  }
 
   return (
     <View style={styles.container}>
@@ -26,7 +33,7 @@ export default function LoginScreen({ navigation }) {
         onChangeText={setPassword}
       />
 
-      <TouchableOpacity style={styles.button} onPress={() => navigation.replace('Main')}>
+      <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Log In</Text>
       </TouchableOpacity>
 
@@ -36,27 +43,16 @@ export default function LoginScreen({ navigation }) {
         </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.testButton} onPress={() => navigation.replace('Main')}>
-        <Text style={styles.testButtonText}>Skip (Test)</Text>
+      <TouchableOpacity style={styles.skipButton} onPress={() => navigation.replace('Main')}>
+        <Text style={styles.skipText}>Skip (Test)</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#121212',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  title: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#fff',
-    textAlign: 'center',
-    marginBottom: 40,
-  },
+  container: { flex: 1, backgroundColor: '#121212', justifyContent: 'center', padding: 24 },
+  title: { fontSize: 36, fontWeight: 'bold', color: '#fff', textAlign: 'center', marginBottom: 40 },
   input: {
     backgroundColor: '#1e1e1e',
     color: '#fff',
@@ -75,26 +71,9 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     marginTop: 4,
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  link: {
-    color: '#888',
-    textAlign: 'center',
-    fontSize: 14,
-  },
-  linkBold: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  testButton: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  testButtonText: {
-    color: '#555',
-    fontSize: 13,
-  },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  link: { color: '#888', textAlign: 'center', fontSize: 14 },
+  linkBold: { color: '#fff', fontWeight: '600' },
+  skipButton: { marginTop: 20, alignItems: 'center' },
+  skipText: { color: '#555', fontSize: 13 },
 });
