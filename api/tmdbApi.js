@@ -34,9 +34,11 @@ async function getMovieDetails(id) {
   return res.json();
 }
 
+// Streaming is proxied by /streaming (separate RapidAPI provider), but we
+// keep the helper here so MovieDetailScreen's existing callers don't change.
 async function getStreamingAvailability(imdbId, country = 'ie') {
   const res = await fetch(
-    `${API_BASE_URL}/tmdb/streaming/${imdbId}?country=${country}`,
+    `${API_BASE_URL}/streaming/${imdbId}?country=${country}`,
     { headers: jsonHeaders() }
   );
   if (!res.ok) throw new Error(`Server responded ${res.status}`);
