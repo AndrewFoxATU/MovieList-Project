@@ -1,31 +1,34 @@
-// AppNavigator sets up the full navigation structure:
-// - Auth stack: Login → Signup
-// - Main tabs: Search (with movie detail nested inside) | Watchlist | AI Picks
+// AppNavigator
+// - Purpose: Decides which stack to render based on auth state (ShopDemo
+//   token-gate pattern). If a token is present: bottom tabs with Search,
+//   Watchlist, and AI Picks. Otherwise: Login/Signup stack.
+
+import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 
+import { useAuth } from '../context/AuthContext';
 import LoginScreen from '../screens/LoginScreen';
 import SignupScreen from '../screens/SignupScreen';
 import SearchScreen from '../screens/SearchScreen';
 import MovieDetailScreen from '../screens/MovieDetailScreen';
 import WatchlistScreen from '../screens/WatchlistScreen';
-import AIRecommendationsScreen from '../screens/AIRecommendationsScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 
-const Stack = createNativeStackNavigator();
+const AuthStack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const SearchStack = createNativeStackNavigator();
 const WatchlistStack = createNativeStackNavigator();
 
-// Search and MovieDetail share a stack so the detail screen slides in over search
 const darkHeader = {
   headerStyle: { backgroundColor: '#121212' },
   headerTintColor: '#fff',
   headerShadowVisible: false,
 };
 
+// Search and MovieDetail share a stack so the detail screen slides over search.
 function SearchNavigator() {
   return (
     <SearchStack.Navigator screenOptions={darkHeader}>
@@ -35,7 +38,7 @@ function SearchNavigator() {
   );
 }
 
-// Watchlist also gets its own stack so tapping a movie slides to the same detail screen
+// Watchlist also gets its own stack so tapping a saved movie opens the same detail.
 function WatchlistNavigator() {
   return (
     <WatchlistStack.Navigator screenOptions={darkHeader}>
@@ -45,7 +48,6 @@ function WatchlistNavigator() {
   );
 }
 
-// Bottom tab bar shown after login
 function MainTabs() {
   return (
     <Tab.Navigator
@@ -74,25 +76,40 @@ function MainTabs() {
         }}
       />
       <Tab.Screen
-        name="AI"
-        component={AIRecommendationsScreen}
+        name="Profile"
+        component={ProfileScreen}
         options={{
-          title: 'AI Picks',
-          tabBarIcon: ({ color, size }) => <FontAwesome5 name="brain" size={size} color={color} />,
+          title: 'Profile',
+          tabBarIcon: ({ color, size }) => <FontAwesome name="user" size={size} color={color} />,
         }}
       />
     </Tab.Navigator>
   );
 }
 
+function AuthNavigator() {
+  return (
+    <AuthStack.Navigator screenOptions={{ headerShown: false }}>
+      <AuthStack.Screen name="Login" component={LoginScreen} />
+      <AuthStack.Screen name="Signup" component={SignupScreen} />
+    </AuthStack.Navigator>
+  );
+}
+
 export default function AppNavigator() {
+  const { token, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#121212', justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#e50914" />
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Signup" component={SignupScreen} />
-        <Stack.Screen name="Main" component={MainTabs} />
-      </Stack.Navigator>
+      {token ? <MainTabs /> : <AuthNavigator />}
     </NavigationContainer>
   );
 }

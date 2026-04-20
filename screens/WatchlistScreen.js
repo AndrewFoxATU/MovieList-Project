@@ -1,25 +1,41 @@
-// WatchlistScreen — shows movies saved to the SQLite watchlist.
-// Reloads every time the tab is focused so it stays in sync with MovieDetailScreen.
-import { useState, useCallback } from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+// WatchlistScreen
+// - Purpose: Shows the user's server-side watchlist. Reloads every time the
+//   tab comes into focus so adds/removes from MovieDetailScreen are reflected.
+
+import { useCallback } from 'react';
+import { View, Text, FlatList, ActivityIndicator, StyleSheet, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { getWatchlist, removeFromWatchlist } from '../database/watchlist';
+import useWatchlist from '../hooks/useWatchlist';
 import MovieCard from '../components/MovieCard';
 
 export default function WatchlistScreen({ navigation }) {
-  const [watchlist, setWatchlist] = useState([]);
+  const { watchlist, loading, loadWatchlist, removeMovie } = useWatchlist();
 
-  // Reload from SQLite every time this tab comes into focus
   useFocusEffect(
     useCallback(() => {
-      getWatchlist().then(setWatchlist);
+      try {
+        loadWatchlist();
+      } catch (err) {
+        Alert.alert('Error', String(err.message ?? err));
+      }
     }, [])
   );
 
-  async function handleRemove(tmdbId) {
-    await removeFromWatchlist(tmdbId);
-    setWatchlist(prev => prev.filter(m => m.tmdb_id !== tmdbId));
+  function handleRemove(tmdbId) {
+    try {
+      removeMovie(tmdbId);
+    } catch (err) {
+      Alert.alert('Error', String(err.message ?? err));
+    }
+  }
+
+  if (loading && watchlist.length === 0) {
+    return (
+      <View style={styles.emptyContainer}>
+        <ActivityIndicator size="large" color="#e50914" />
+      </View>
+    );
   }
 
   if (watchlist.length === 0) {
@@ -42,7 +58,15 @@ export default function WatchlistScreen({ navigation }) {
           year={item.year}
           rating={item.rating}
           posterUri={item.poster_url}
-          onPress={() => navigation.navigate('MovieDetail', { movie: { id: item.tmdb_id, title: item.title, poster_url: item.poster_url, release_date: item.year, vote_average: item.rating } })}
+          onPress={() => navigation.navigate('MovieDetail', {
+            movie: {
+              id: item.tmdb_id,
+              title: item.title,
+              poster_url: item.poster_url,
+              release_date: item.year,
+              vote_average: item.rating,
+            },
+          })}
           onRemove={() => handleRemove(item.tmdb_id)}
         />
       )}

@@ -1,5 +1,8 @@
-// SearchScreen — shows popular movies on load, or search results when the user types.
-// Tapping a movie navigates to MovieDetailScreen.
+// SearchScreen
+// - Purpose: Shows popular movies on load; runs a search when the user types.
+//   Uses useMovies (backed by the backend TMDB proxy) instead of talking to
+//   TMDB directly.
+
 import { useState, useEffect } from 'react';
 import {
   View,
@@ -8,60 +11,34 @@ import {
   FlatList,
   ActivityIndicator,
   StyleSheet,
+  Alert,
 } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { TMDB_BASE_URL, TMDB_ACCESS_TOKEN, POSTER_BASE_URL } from '../config';
+import useMovies from '../hooks/useMovies';
 import MovieCard from '../components/MovieCard';
+
+// TMDB image CDN - only the path segments come from the API, so the base
+// can stay client-side without leaking any secret.
+const POSTER_BASE_URL = 'https://image.tmdb.org/t/p/w342';
 
 export default function SearchScreen({ navigation }) {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const { results, loading, loadPopular, searchMovies } = useMovies();
 
-  // Load popular movies when the screen first opens
   useEffect(() => {
-    fetchPopular();
+    loadPopular().catch(err => Alert.alert('Error', String(err.message ?? err)));
   }, []);
 
-  async function fetchPopular() {
-    setLoading(true);
-    try {
-      const res = await fetch(`${TMDB_BASE_URL}/movie/popular?language=en-US&page=1`, {
-        headers: { Authorization: `Bearer ${TMDB_ACCESS_TOKEN}` },
-      });
-      const data = await res.json();
-      setResults(data.results ?? []);
-    } catch (err) {
-      console.error('Failed to load popular movies:', err);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   async function handleSearch() {
-    // If the search box is empty, go back to showing popular movies
-    if (!query.trim()) {
-      fetchPopular();
-      return;
-    }
-    setLoading(true);
     try {
-      const res = await fetch(
-        `${TMDB_BASE_URL}/search/movie?query=${encodeURIComponent(query)}&language=en-US&page=1`,
-        { headers: { Authorization: `Bearer ${TMDB_ACCESS_TOKEN}` } }
-      );
-      const data = await res.json();
-      setResults(data.results ?? []);
+      await searchMovies(query);
     } catch (err) {
-      console.error('Search failed:', err);
-    } finally {
-      setLoading(false);
+      Alert.alert('Search failed', String(err.message ?? err));
     }
   }
 
   return (
     <View style={styles.container}>
-      {/* Search bar */}
       <View style={styles.searchRow}>
         <FontAwesome name="search" size={18} color="#888" style={styles.searchIcon} />
         <TextInput
@@ -81,7 +58,6 @@ export default function SearchScreen({ navigation }) {
         {query.trim() ? 'Results' : 'Popular Movies'}
       </Text>
 
-      {/* Movie list */}
       <FlatList
         data={results}
         keyExtractor={item => String(item.id)}
@@ -113,5 +89,12 @@ const styles = StyleSheet.create({
   },
   searchIcon: { marginRight: 8 },
   input: { flex: 1, color: '#fff', fontSize: 16, paddingVertical: 12 },
-  sectionHeader: { color: '#888', fontSize: 13, fontWeight: '600', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 },
+  sectionHeader: {
+    color: '#888',
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
 });

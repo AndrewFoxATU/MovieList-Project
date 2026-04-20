@@ -1,73 +1,52 @@
-// SignupScreen — collects a username and password to create an account.
-// SQLite insert logic will be added here when the DB is wired up.
+// SignupScreen
+// - Purpose: Creates a new account. POSTs to /auth/signup, stores the JWT via
+//   AuthContext (which then flips AppNavigator to the main tabs).
+
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
+import AuthForm from '../components/AuthForm';
+import authApi from '../api/authApi';
+import { useAuth } from '../context/AuthContext';
 
 export default function SignupScreen({ navigation }) {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const { login } = useAuth();
+  const [loading, setLoading] = useState(false);
 
-  function handleSignup() {
-    // TODO: insert new user into SQLite before navigating
-    navigation.replace('Main');
+  async function handleSignup(username, password) {
+    if (!username.trim() || !password) {
+      return Alert.alert('Validation', 'Username and password are required');
+    }
+    setLoading(true);
+    try {
+      const data = await authApi.signup(username.trim(), password);
+      await login(data.token);
+    } catch (err) {
+      Alert.alert('Signup failed', String(err.message ?? err));
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Create Account</Text>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Username"
-        placeholderTextColor="#888"
-        autoCapitalize="none"
-        value={username}
-        onChangeText={setUsername}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        placeholderTextColor="#888"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
-
-      <TouchableOpacity style={styles.button} onPress={handleSignup}>
-        <Text style={styles.buttonText}>Sign Up</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-        <Text style={styles.link}>
-          Already have an account? <Text style={styles.linkBold}>Log in</Text>
-        </Text>
-      </TouchableOpacity>
-    </View>
+    <AuthForm
+      title="Create Account"
+      submitLabel="Sign Up"
+      loading={loading}
+      onSubmit={handleSignup}
+      footer={
+        <View>
+          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+            <Text style={styles.link}>
+              Already have an account? <Text style={styles.linkBold}>Log in</Text>
+            </Text>
+          </TouchableOpacity>
+        </View>
+      }
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121212', justifyContent: 'center', padding: 24 },
-  title: { fontSize: 36, fontWeight: 'bold', color: '#fff', textAlign: 'center', marginBottom: 40 },
-  input: {
-    backgroundColor: '#1e1e1e',
-    color: '#fff',
-    borderRadius: 8,
-    padding: 14,
-    fontSize: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#333',
-  },
-  button: {
-    backgroundColor: '#e50914',
-    padding: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 20,
-    marginTop: 4,
-  },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   link: { color: '#888', textAlign: 'center', fontSize: 14 },
   linkBold: { color: '#fff', fontWeight: '600' },
 });
