@@ -1,13 +1,12 @@
 // AuthForm
-// - Purpose: Shared presentational form for both Login and Signup screens.
-//   The two screens used to be nearly identical - this component removes the
-//   duplication while keeping the dark theme.
+// - Purpose: Shared form used by both LoginScreen and SignupScreen.
+//   Both screens were nearly identical so this component removes the duplication.
 // - Props:
-//    - title: header text ("MovieList" / "Create Account")
-//    - submitLabel: primary button label ("Log In" / "Sign Up")
-//    - loading: show an ActivityIndicator instead of the primary button
-//    - onSubmit(username, password): called when the primary button is pressed
-//    - footer: optional node rendered below the form (e.g. the "Sign up" link)
+//    - title: heading text ("MovieList" / "Create Account")
+//    - submitLabel: button label ("Log In" / "Sign Up")
+//    - loading: shows a spinner instead of the button while the API call is in flight
+//    - onSubmit(username, password): called when the button is pressed
+//    - footer: optional element below the form (e.g. the "Sign up" / "Log in" link)
 
 import { useState } from 'react';
 import {
@@ -20,6 +19,8 @@ import {
 } from 'react-native';
 
 export default function AuthForm({ title, submitLabel, loading, onSubmit, footer }) {
+  // Username and password are kept as local state — no need to lift them up
+  // since only this form ever reads them.
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
@@ -35,6 +36,7 @@ export default function AuthForm({ title, submitLabel, loading, onSubmit, footer
         value={username}
         onChangeText={setUsername}
       />
+      {/* secureTextEntry hides the password characters on screen */}
       <TextInput
         style={styles.input}
         placeholder="Password"
@@ -44,6 +46,7 @@ export default function AuthForm({ title, submitLabel, loading, onSubmit, footer
         onChangeText={setPassword}
       />
 
+      {/* Replace the button with a spinner while the login/signup request is pending */}
       {loading ? (
         <ActivityIndicator color="#e50914" style={{ marginVertical: 14 }} />
       ) : (
@@ -52,6 +55,7 @@ export default function AuthForm({ title, submitLabel, loading, onSubmit, footer
         </TouchableOpacity>
       )}
 
+      {/* Footer slot — LoginScreen passes a "Sign up" link, SignupScreen passes a "Log in" link */}
       {footer}
     </View>
   );

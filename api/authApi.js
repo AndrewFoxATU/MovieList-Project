@@ -1,14 +1,12 @@
 // authApi
-// - Purpose: Auth HTTP calls against ProjectBackend /auth routes.
-// - Exports:
-//    - login(username, password): POST /auth/login  -> { token, username }
-//    - signup(username, password): POST /auth/signup -> { token, username }
-//    - postPushToken(expoPushToken): POST /auth/push-token (authenticated)
-// - Notes: Throws on non-OK responses. The backend expects `username` (not email).
+// - Handles all authentication HTTP calls to the backend /auth routes.
+// - login / signup both return { token, username } on success.
+// - postPushToken registers the device for push notifications (wired, not yet active).
 
 import { API_BASE_URL } from '../config';
 import { getAuthHeaders } from './authToken';
 
+// POST credentials to the backend, returns a JWT token on success.
 async function login(username, password) {
   const res = await fetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
@@ -22,6 +20,7 @@ async function login(username, password) {
   return res.json();
 }
 
+// Creates a new account and returns a JWT — user is logged in immediately after signup.
 async function signup(username, password) {
   const res = await fetch(`${API_BASE_URL}/auth/signup`, {
     method: 'POST',
@@ -35,6 +34,8 @@ async function signup(username, password) {
   return res.json();
 }
 
+// Sends the Expo push token to the backend so it can target this device for notifications.
+// Requires auth header since the token must be linked to the logged-in user.
 async function postPushToken(expoPushToken) {
   const res = await fetch(`${API_BASE_URL}/auth/push-token`, {
     method: 'POST',

@@ -1,6 +1,7 @@
 // WatchlistScreen
-// - Purpose: Shows the user's server-side watchlist. Reloads every time the
-//   tab comes into focus so adds/removes from MovieDetailScreen are reflected.
+// - Purpose: Displays all movies the user has saved to their local watchlist.
+//   Reloads every time the tab comes into focus so adds/removes made in
+//   MovieDetailScreen are immediately reflected here.
 
 import { useCallback } from 'react';
 import { View, Text, FlatList, ActivityIndicator, StyleSheet, Alert } from 'react-native';
@@ -12,6 +13,9 @@ import MovieCard from '../components/MovieCard';
 export default function WatchlistScreen({ navigation }) {
   const { watchlist, loading, loadWatchlist, removeMovie } = useWatchlist();
 
+  // Reload the watchlist from SQLite every time this screen gains focus.
+  // useCallback with [] prevents a new function being created on every render,
+  // which would cause useFocusEffect to re-subscribe unnecessarily.
   useFocusEffect(
     useCallback(() => {
       try {
@@ -30,6 +34,7 @@ export default function WatchlistScreen({ navigation }) {
     }
   }
 
+  // Show spinner only on the very first load (list is empty and still fetching).
   if (loading && watchlist.length === 0) {
     return (
       <View style={styles.emptyContainer}>
@@ -38,6 +43,7 @@ export default function WatchlistScreen({ navigation }) {
     );
   }
 
+  // Empty state shown after loading completes with no saved movies.
   if (watchlist.length === 0) {
     return (
       <View style={styles.emptyContainer}>
@@ -59,6 +65,8 @@ export default function WatchlistScreen({ navigation }) {
           rating={item.rating}
           posterUri={item.poster_url}
           onPress={() => navigation.navigate('MovieDetail', {
+            // SQLite stores tmdb_id/poster_url/year/rating — remap to the
+            // shape MovieDetailScreen expects (same fields as a TMDB result).
             movie: {
               id: item.tmdb_id,
               title: item.title,

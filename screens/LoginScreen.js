@@ -1,6 +1,7 @@
 // LoginScreen
-// - Purpose: Signs an existing user in. POSTs to /auth/login, stores the
-//   returned JWT via AuthContext, which flips AppNavigator to the main tabs.
+// - Purpose: Signs an existing user in. POSTs credentials to /auth/login,
+//   stores the returned JWT via AuthContext, which causes AppNavigator to
+//   switch from the Auth stack to the Main tabs automatically.
 
 import { useState } from 'react';
 import { View, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
@@ -13,12 +14,14 @@ export default function LoginScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
 
   async function handleLogin(username, password) {
+    // Basic validation before hitting the network.
     if (!username.trim() || !password) {
       return Alert.alert('Validation', 'Username and password are required');
     }
     setLoading(true);
     try {
       const data = await authApi.login(username.trim(), password);
+      // Storing the token triggers AppNavigator to re-render and show MainTabs.
       await login(data.token);
     } catch (err) {
       Alert.alert('Login failed', String(err.message ?? err));

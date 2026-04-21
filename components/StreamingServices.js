@@ -1,11 +1,10 @@
 // StreamingServices
-// - Purpose: Renders the "Where to Watch" row on MovieDetailScreen. The
-//   brand colours / labels were inline in MovieDetailScreen before; pulling
-//   them out here makes the screen shorter and lets the same component be
-//   reused elsewhere (e.g. a future search filter).
+// - Purpose: Renders the "Where to Watch" section on MovieDetailScreen.
+//   Extracted from MovieDetailScreen to keep that screen a manageable length.
 // - Props:
-//    - streaming: Array of streaming options from the backend /tmdb/streaming endpoint
-//    - loading: boolean
+//    - streaming: array of streaming options returned by the backend /streaming endpoint
+//    - loading: boolean — shows a spinner while the RapidAPI fetch is in flight
+// - Tapping a badge opens the streaming provider's URL via Linking.openURL (deep link).
 
 import {
   View,
@@ -16,6 +15,7 @@ import {
   Linking,
 } from 'react-native';
 
+// Brand colours for each known streaming service.
 const SERVICE_COLORS = {
   netflix: '#E50914',
   prime: '#00A8E1',
@@ -28,6 +28,7 @@ const SERVICE_COLORS = {
   mubi: '#000000',
 };
 
+// Human-readable display names mapped from the service ID the API returns.
 const SERVICE_LABELS = {
   netflix: 'Netflix',
   prime: 'Prime Video',
@@ -44,11 +45,13 @@ export default function StreamingServices({ streaming, loading }) {
   return (
     <View style={styles.section}>
       <Text style={styles.sectionLabel}>Where to Watch</Text>
+
       {loading ? (
         <ActivityIndicator color="#e50914" style={{ marginTop: 8 }} />
       ) : streaming && streaming.length > 0 ? (
         <View style={styles.serviceRow}>
           {streaming.map((item, idx) => {
+            // service.id from the API (e.g. "netflix") is used to look up colour and label.
             const key = item.service?.id?.toLowerCase();
             const color = SERVICE_COLORS[key] ?? '#333';
             const label = SERVICE_LABELS[key] ?? item.service?.name;
@@ -56,10 +59,12 @@ export default function StreamingServices({ streaming, loading }) {
               <TouchableOpacity
                 key={idx}
                 style={[styles.serviceBadge, { backgroundColor: color }]}
+                // Opens the provider's page for this title in the browser or native app.
                 onPress={() => item.link && Linking.openURL(item.link)}
                 activeOpacity={item.link ? 0.7 : 1}
               >
                 <Text style={styles.serviceText}>{label}</Text>
+                {/* Show how the title is available: subscription, rent, or buy */}
                 {item.type === 'subscription' && <Text style={styles.serviceType}>Subscription</Text>}
                 {item.type === 'rent' && <Text style={styles.serviceType}>Rent</Text>}
                 {item.type === 'buy' && <Text style={styles.serviceType}>Buy</Text>}

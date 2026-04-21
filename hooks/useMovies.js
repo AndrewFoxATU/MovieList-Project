@@ -1,18 +1,8 @@
 // useMovies hook
-// - Purpose: Encapsulates movie browsing + detail state, backed by the
-//   ProjectBackend TMDB proxy. Used by SearchScreen (popular/search) and
-//   MovieDetailScreen (details/streaming).
-// - Returns:
-//    - results: Array of TMDB movie summaries
-//    - loading: boolean for list/search fetches
-//    - details: last-loaded full movie object (MovieDetailScreen)
-//    - detailsLoading: boolean for the details fetch
-//    - streaming: Array of streaming services for the last fetched title
-//    - streamingLoading: boolean for the streaming fetch
-//    - loadPopular(): fetch TMDB popular list
-//    - searchMovies(query): fetch TMDB search results
-//    - loadDetails(id): fetch full movie details; also pulls streaming if imdb_id is present
-//    - clearDetails(): reset details/streaming (useful when the screen unmounts)
+// - Manages movie list, details, and streaming state for SearchScreen and MovieDetailScreen.
+// - loadPopular / searchMovies update `results` (the list)
+// - loadDetails fetches full TMDB data then chains a streaming fetch if imdb_id exists
+// - clearDetails resets state on screen unmount so stale data doesn't flash
 
 import { useState } from 'react';
 import tmdbApi from '../api/tmdbApi';
@@ -37,9 +27,9 @@ export default function useMovies() {
     }
   }
 
+  // Falls back to loadPopular if the query is empty so the list is never blank.
   async function searchMovies(query) {
     if (!query || !String(query).trim()) {
-      // Empty query -> fall back to popular, matching the original UX.
       return loadPopular();
     }
     setLoading(true);
@@ -51,6 +41,8 @@ export default function useMovies() {
     }
   }
 
+  // Fetches TMDB details first, then chains a streaming fetch using imdb_id.
+  // Two loading flags so movie info shows immediately while streaming still loads.
   async function loadDetails(id) {
     setDetailsLoading(true);
     setStreaming([]);
@@ -78,15 +70,9 @@ export default function useMovies() {
   }
 
   return {
-    results,
-    loading,
-    details,
-    detailsLoading,
-    streaming,
-    streamingLoading,
-    loadPopular,
-    searchMovies,
-    loadDetails,
-    clearDetails,
+    results, loading,
+    details, detailsLoading,
+    streaming, streamingLoading,
+    loadPopular, searchMovies, loadDetails, clearDetails,
   };
 }

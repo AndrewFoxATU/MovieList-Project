@@ -1,6 +1,7 @@
 // SignupScreen
-// - Purpose: Creates a new account. POSTs to /auth/signup, stores the JWT via
-//   AuthContext (which then flips AppNavigator to the main tabs).
+// - Creates a new account via POST /auth/signup.
+// - On success, stores the returned JWT in AuthContext which causes
+//   AppNavigator to switch to MainTabs automatically.
 
 import { useState } from 'react';
 import { View, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
@@ -19,6 +20,7 @@ export default function SignupScreen({ navigation }) {
     setLoading(true);
     try {
       const data = await authApi.signup(username.trim(), password);
+      // signup returns a JWT just like login — store it to skip the auth stack.
       await login(data.token);
     } catch (err) {
       Alert.alert('Signup failed', String(err.message ?? err));

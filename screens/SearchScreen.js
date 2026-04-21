@@ -1,7 +1,7 @@
 // SearchScreen
-// - Purpose: Shows popular movies on load; runs a search when the user types.
-//   Uses useMovies (backed by the backend TMDB proxy) instead of talking to
-//   TMDB directly.
+// - Purpose: Main discovery screen. Shows popular movies on load and
+//   runs a search when the user submits a query. Uses the backend TMDB
+//   proxy via useMovies — no API keys needed on the client.
 
 import { useState, useEffect } from 'react';
 import {
@@ -17,20 +17,22 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import useMovies from '../hooks/useMovies';
 import MovieCard from '../components/MovieCard';
 
-// TMDB image CDN - only the path segments come from the API, so the base
-// can stay client-side without leaking any secret.
+// TMDB image CDN base — only the path comes from the API, the base URL is public.
 const POSTER_BASE_URL = 'https://image.tmdb.org/t/p/w342';
 
 export default function SearchScreen({ navigation }) {
   const [query, setQuery] = useState('');
   const { results, loading, loadPopular, searchMovies } = useMovies();
 
+  // Load popular movies as soon as the screen mounts so there's always
+  // something to show before the user types anything.
   useEffect(() => {
     loadPopular().catch(err => Alert.alert('Error', String(err.message ?? err)));
   }, []);
 
   async function handleSearch() {
     try {
+      // useMovies.searchMovies falls back to loadPopular if query is empty.
       await searchMovies(query);
     } catch (err) {
       Alert.alert('Search failed', String(err.message ?? err));
@@ -39,6 +41,7 @@ export default function SearchScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
+      {/* Search bar — submits on the keyboard's search button */}
       <View style={styles.searchRow}>
         <FontAwesome name="search" size={18} color="#888" style={styles.searchIcon} />
         <TextInput
@@ -54,6 +57,7 @@ export default function SearchScreen({ navigation }) {
 
       {loading && <ActivityIndicator color="#e50914" style={{ marginTop: 20 }} />}
 
+      {/* Section header changes label depending on whether a search is active */}
       <Text style={styles.sectionHeader}>
         {query.trim() ? 'Results' : 'Popular Movies'}
       </Text>
@@ -67,6 +71,8 @@ export default function SearchScreen({ navigation }) {
             year={item.release_date?.slice(0, 4)}
             rating={item.vote_average}
             posterUri={item.poster_path ? `${POSTER_BASE_URL}${item.poster_path}` : null}
+            // Pass the full item to MovieDetailScreen so it can show basic info
+            // immediately while the full TMDB details fetch completes.
             onPress={() => navigation.navigate('MovieDetail', { movie: item })}
           />
         )}

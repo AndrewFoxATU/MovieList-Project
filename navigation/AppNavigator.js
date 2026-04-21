@@ -1,8 +1,3 @@
-// AppNavigator
-// - Purpose: Decides which stack to render based on auth state (ShopDemo
-//   token-gate pattern). If a token is present: bottom tabs with Search,
-//   Watchlist, and AI Picks. Otherwise: Login/Signup stack.
-
 import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -22,13 +17,15 @@ const Tab = createBottomTabNavigator();
 const SearchStack = createNativeStackNavigator();
 const WatchlistStack = createNativeStackNavigator();
 
+// Shared dark header style applied to all stack screens.
 const darkHeader = {
   headerStyle: { backgroundColor: '#121212' },
   headerTintColor: '#fff',
   headerShadowVisible: false,
 };
 
-// Search and MovieDetail share a stack so the detail screen slides over search.
+// SearchScreen and MovieDetailScreen share a stack so tapping a movie
+// slides the detail screen over the search list without leaving the tab.
 function SearchNavigator() {
   return (
     <SearchStack.Navigator screenOptions={darkHeader}>
@@ -38,7 +35,7 @@ function SearchNavigator() {
   );
 }
 
-// Watchlist also gets its own stack so tapping a saved movie opens the same detail.
+// Same pattern for Watchlist — tapping a saved movie opens the same detail screen.
 function WatchlistNavigator() {
   return (
     <WatchlistStack.Navigator screenOptions={darkHeader}>
@@ -48,6 +45,7 @@ function WatchlistNavigator() {
   );
 }
 
+// The three main tabs shown to authenticated users.
 function MainTabs() {
   return (
     <Tab.Navigator
@@ -87,6 +85,7 @@ function MainTabs() {
   );
 }
 
+// Login and Signup screens — shown when no token exists.
 function AuthNavigator() {
   return (
     <AuthStack.Navigator screenOptions={{ headerShown: false }}>
@@ -99,6 +98,8 @@ function AuthNavigator() {
 export default function AppNavigator() {
   const { token, loading } = useAuth();
 
+  // Wait for AuthContext to restore the token from SecureStore before rendering.
+  // Without this, the app would flash the Login screen on every launch.
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: '#121212', justifyContent: 'center', alignItems: 'center' }}>
@@ -109,6 +110,7 @@ export default function AppNavigator() {
 
   return (
     <NavigationContainer>
+      {/* Token gate: authenticated users see MainTabs, everyone else sees Login/Signup */}
       {token ? <MainTabs /> : <AuthNavigator />}
     </NavigationContainer>
   );

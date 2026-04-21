@@ -1,3 +1,11 @@
+// profileApi
+// - Purpose: HTTP calls for the user's profile against the backend /auth routes.
+// - Exports:
+//    - getProfile(): GET /auth/profile → { username, photoUrl, ... }
+//    - uploadProfilePhoto(base64Image): POST /auth/profile/photo → updated user object
+// - Notes: Photos are sent as a full base64 data URI (not multipart/form-data)
+//   because it's simpler for the backend to handle as plain JSON.
+
 import { API_BASE_URL } from '../config';
 import { getAuthHeaders } from './authToken';
 
@@ -10,6 +18,7 @@ async function getProfile() {
 }
 
 // base64Image: full data URI string — "data:image/jpeg;base64,..."
+// Built by expo-image-picker with base64: true, then prefixed in ProfileScreen.
 async function uploadProfilePhoto(base64Image) {
   const res = await fetch(`${API_BASE_URL}/auth/profile/photo`, {
     method: 'POST',
