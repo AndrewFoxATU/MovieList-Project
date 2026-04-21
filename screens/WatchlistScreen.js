@@ -21,7 +21,11 @@ export default function WatchlistScreen({ navigation }) {
       try {
         loadWatchlist();
       } catch (err) {
-        Alert.alert('Error', String(err.message ?? err));
+        if (err.message) {
+          Alert.alert('Error', String(err.message));
+        } else {
+          Alert.alert('Error', String(err));
+        }
       }
     }, [])
   );
@@ -30,7 +34,11 @@ export default function WatchlistScreen({ navigation }) {
     try {
       removeMovie(tmdbId);
     } catch (err) {
-      Alert.alert('Error', String(err.message ?? err));
+      if (err.message) {
+        Alert.alert('Error', String(err.message));
+      } else {
+        Alert.alert('Error', String(err));
+      }
     }
   }
 
