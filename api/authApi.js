@@ -1,7 +1,6 @@
 // authApi
 // - Handles all authentication HTTP calls to the backend /auth routes.
 // - login / signup both return { token, username } on success.
-// - postPushToken registers the device for push notifications (wired, not yet active).
 
 import { API_BASE_URL } from '../config';
 import { getAuthHeaders } from './authToken';
@@ -34,19 +33,5 @@ async function signup(username, password) {
   return res.json();
 }
 
-// Sends the Expo push token to the backend so it can target this device for notifications.
-// Requires auth header since the token must be linked to the logged-in user.
-async function postPushToken(expoPushToken) {
-  const res = await fetch(`${API_BASE_URL}/auth/push-token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-    body: JSON.stringify({ pushToken: expoPushToken }),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Push token registration failed: ${res.status} ${text}`);
-  }
-  try { return await res.json(); } catch { return null; }
-}
 
-export default { login, signup, postPushToken };
+export default { login, signup};

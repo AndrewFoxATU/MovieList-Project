@@ -1,11 +1,4 @@
-// ProfileScreen
-// - Purpose: Displays the logged-in user's profile photo and username.
-//   Allows the user to update their photo via camera or photo library,
-//   and sign out of the app.
-// - useFocusEffect re-fetches the profile every time the tab is opened
-//   so changes made elsewhere (e.g. on another device) are picked up.
-
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -27,7 +20,6 @@ export default function ProfileScreen() {
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [uploading, setUploading] = useState(false);
 
-  // Re-fetch profile data every time this screen comes into focus.
   useFocusEffect(
     useCallback(() => {
       fetchProfile();
@@ -40,14 +32,16 @@ export default function ProfileScreen() {
       const data = await profileApi.getProfile();
       setProfile(data);
     } catch (err) {
-      Alert.alert('Error', String(err.message ?? err));
+      if (err.message) {
+        Alert.alert('Error', String(err.message));
+      } else {
+        Alert.alert('Error', String(err));
+      }
     } finally {
       setLoadingProfile(false);
     }
   }
 
-  // Opens the device photo library. Requests permission first —
-  // if denied, shows an alert explaining why it's needed.
   async function handlePickPhoto() {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -58,19 +52,24 @@ export default function ProfileScreen() {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
-        aspect: [1, 1],   // crop to square for the circular avatar
-        quality: 0.6,     // compress to reduce upload size
-        base64: true,     // needed to send as JSON to the backend
+        aspect: [1, 1],
+        quality: 0.6,
+        base64: true,
       });
-      if (!result.canceled && result.assets?.[0]?.base64) {
-        await uploadPhoto(`data:image/jpeg;base64,${result.assets[0].base64}`);
+      if (!result.canceled) {
+        if (result.assets && result.assets[0] && result.assets[0].base64) {
+          await uploadPhoto(`data:image/jpeg;base64,${result.assets[0].base64}`);
+        }
       }
     } catch (err) {
-      Alert.alert('Error', String(err.message ?? err));
+      if (err.message) {
+        Alert.alert('Error', String(err.message));
+      } else {
+        Alert.alert('Error', String(err));
+      }
     }
   }
 
-  // Opens the device camera. Same permission + upload flow as handlePickPhoto.
   async function handleTakePhoto() {
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -84,29 +83,36 @@ export default function ProfileScreen() {
         quality: 0.6,
         base64: true,
       });
-      if (!result.canceled && result.assets?.[0]?.base64) {
-        await uploadPhoto(`data:image/jpeg;base64,${result.assets[0].base64}`);
+      if (!result.canceled) {
+        if (result.assets && result.assets[0] && result.assets[0].base64) {
+          await uploadPhoto(`data:image/jpeg;base64,${result.assets[0].base64}`);
+        }
       }
     } catch (err) {
-      Alert.alert('Error', String(err.message ?? err));
+      if (err.message) {
+        Alert.alert('Error', String(err.message));
+      } else {
+        Alert.alert('Error', String(err));
+      }
     }
   }
 
-  // Sends the base64 image to the backend. On success, updates only the
-  // photoUrl field in local state so the rest of the profile doesn't re-fetch.
   async function uploadPhoto(base64Image) {
     setUploading(true);
     try {
       const data = await profileApi.uploadProfilePhoto(base64Image);
       setProfile(prev => ({ ...prev, photoUrl: data.photoUrl }));
     } catch (err) {
-      Alert.alert('Upload failed', String(err.message ?? err));
+      if (err.message) {
+        Alert.alert('Upload failed', String(err.message));
+      } else {
+        Alert.alert('Upload failed', String(err));
+      }
     } finally {
       setUploading(false);
     }
   }
 
-  // Shows an action sheet so the user can choose camera or library.
   function handlePhotoPress() {
     Alert.alert('Profile Photo', 'Choose an option', [
       { text: 'Take Photo', onPress: handleTakePhoto },
@@ -115,7 +121,6 @@ export default function ProfileScreen() {
     ]);
   }
 
-  // Confirms before signing out to prevent accidental taps.
   function handleSignOut() {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
       { text: 'Cancel', style: 'cancel' },
@@ -131,20 +136,27 @@ export default function ProfileScreen() {
     );
   }
 
+  let photoUrl = null;
+  if (profile && profile.photoUrl) {
+    photoUrl = profile.photoUrl;
+  }
+
+  let username = '—';
+  if (profile && profile.username) {
+    username = profile.username;
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.avatarSection}>
-        {/* Tapping the avatar opens the camera/library action sheet.
-            Disabled while an upload is in progress to prevent double-submits. */}
         <TouchableOpacity onPress={handlePhotoPress} disabled={uploading} style={styles.avatarWrapper}>
-          {profile?.photoUrl ? (
-            <Image source={{ uri: profile.photoUrl }} style={styles.avatar} />
+          {photoUrl ? (
+            <Image source={{ uri: photoUrl }} style={styles.avatar} />
           ) : (
             <View style={styles.avatarPlaceholder}>
               <FontAwesome name="user" size={48} color="#555" />
             </View>
           )}
-          {/* Camera badge overlaid on the avatar — shows a spinner during upload */}
           <View style={styles.editBadge}>
             {uploading
               ? <ActivityIndicator size="small" color="#fff" />
@@ -153,7 +165,7 @@ export default function ProfileScreen() {
           </View>
         </TouchableOpacity>
 
-        <Text style={styles.username}>{profile?.username ?? '—'}</Text>
+        <Text style={styles.username}>{username}</Text>
       </View>
 
       <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>

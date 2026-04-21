@@ -24,7 +24,9 @@ export function getCurrentUserId() {
   if (!_token) return null;
   try {
     const payload = JSON.parse(atob(_token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-    return String(payload.sub ?? payload.username ?? payload.id);
+    if (payload.sub) return String(payload.sub);
+    if (payload.username) return String(payload.username);
+    return String(payload.id);
   } catch {
     return null;
   }
